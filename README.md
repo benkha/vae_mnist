@@ -1,1 +1,1 @@
-# vae_mnist
+# Variational Autoencoder - MNIST
