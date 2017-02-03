@@ -1,10 +1,12 @@
+"""
+Variational Autoencoder on MNIST Dataset
+"""
 import os
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.misc import imsave as ims
 from tensorflow.contrib.learn.python.learn.datasets.mnist import read_data_sets
-
 
 def merge(images, size):
     height, width = images.shape[1], images.shape[2]
@@ -24,7 +26,6 @@ class VAE:
         self.stddev = 0.02
         self.num_reparameters = 20
         self.batch_size = 100
-
         self.mnist = read_data_sets("MNIST_data/", one_hot=True)
         self.n_samples = self.mnist.train.num_examples
 
