@@ -1,21 +1,21 @@
+import os
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
-import os
 from scipy.misc import imsave as ims
 from tensorflow.contrib.learn.python.learn.datasets.mnist import read_data_sets
 
 
 def merge(images, size):
-        h, w = images.shape[1], images.shape[2]
-        img = np.zeros((h * size[0], w * size[1]))
+    height, width = images.shape[1], images.shape[2]
+    img = np.zeros((height * size[0], width * size[1]))
 
-        for idx, image in enumerate(images):
-            i = idx % size[1]
-            j = idx // size[1]
-            img[j*h:j*h+h, i*w:i*w+w] = image
+    for idx, image in enumerate(images):
+        i = idx % size[1]
+        j = idx // size[1]
+        img[j*height:j*height+height, i*width:i*width+width] = image
 
-        return img
+    return img
 
 class VAE:
 
@@ -38,9 +38,14 @@ class VAE:
         self.generated_images = self.decoder(guessed_z)
         generated_flat = tf.reshape(self.generated_images, [self.batch_size, 28*28])
 
-        self.generation_loss = -tf.reduce_sum(self.images * tf.log(1e-8 + generated_flat) + (1-self.images) * tf.log(1e-8 + 1 - generated_flat),1)
+        self.generation_loss = -tf.reduce_sum(self.images *
+                                              tf.log(1e-8 + generated_flat) +
+                                              (1-self.images) *
+                                              tf.log(1e-8 + 1 - generated_flat), 1)
 
-        self.latent_loss = 0.5 * tf.reduce_sum(tf.square(means) + tf.square(stddevs) - tf.log(tf.square(stddevs)) - 1,1)
+        self.latent_loss = 0.5 * \
+                           tf.reduce_sum(tf.square(means) + \
+                           tf.square(stddevs) - tf.log(tf.square(stddevs)) - 1, 1)
         self.cost = tf.reduce_mean(self.generation_loss + self.latent_loss)
         self.optimizer = tf.train.AdamOptimizer(0.001).minimize(self.cost)
 
@@ -61,7 +66,7 @@ class VAE:
             d_matrix = self.fully_connected(z_in, self.num_reparameters, 7 * 7 * 32, "d_matrix")
             d_matrix_relu = tf.nn.relu(tf.reshape(d_matrix, [self.batch_size, 7, 7, 32]))
             h_1 = tf.nn.relu(self.conv_transpose(d_matrix_relu, [self.batch_size, 14, 14, 16],
-                                                "d_h1"))
+                                                 "d_h1"))
             h_2 = self.conv_transpose(h_1, [self.batch_size, 28, 28, 1], "d_h2")
             return tf.nn.sigmoid(h_2)
 
@@ -82,8 +87,6 @@ class VAE:
                                       [5, 5, shape[-1], x_in.get_shape()[-1]],
                                       initializer=
                                       tf.truncated_normal_initializer(stddev=self.stddev))
-            biases = tf.get_variable("biases", [shape[-1]],
-                                     initializer=tf.constant_initializer(0.0))
             conv_t = tf.nn.conv2d_transpose(x_in, weights, output_shape=shape, strides=[1, 2, 2, 1])
             return conv_t
 
@@ -100,8 +103,8 @@ class VAE:
 
     def train(self):
         visualization = self.mnist.train.next_batch(self.batch_size)[0]
-        reshaped_vis = visualization.reshape(self.batch_size,28,28)
-        ims("results/base.jpg",merge(reshaped_vis[:64],[8,8]))
+        reshaped_vis = visualization.reshape(self.batch_size, 28, 28)
+        ims("results/base.jpg", merge(reshaped_vis[:64], [8, 8]))
         # train
         saver = tf.train.Saver(max_to_keep=2)
         with tf.Session() as sess:
@@ -109,14 +112,19 @@ class VAE:
             for epoch in range(10):
                 for idx in range(int(self.n_samples / self.batch_size)):
                     batch = self.mnist.train.next_batch(self.batch_size)[0]
-                    _, gen_loss, lat_loss = sess.run((self.optimizer, self.generation_loss, self.latent_loss), feed_dict={self.images: batch})
+                    _, gen_loss, lat_loss = sess.run((self.optimizer,
+                                                      self.generation_loss,
+                                                      self.latent_loss),
+                                                     feed_dict={self.images: batch})
                     # dumb hack to print cost every epoch
                     if idx % (self.n_samples - 3) == 0:
-                        print("epoch {}: genloss {} latloss {}".format(epoch, np.mean(gen_loss), np.mean(lat_loss)))
-                        saver.save(sess, os.getcwd()+"/training/train",global_step=epoch)
-                        generated_test = sess.run(self.generated_images, feed_dict={self.images: visualization})
-                        generated_test = generated_test.reshape(self.batch_size,28,28)
-                        ims("results/"+str(epoch)+".jpg",merge(generated_test[:64],[8,8]))
+                        print("epoch {}: genloss {} latloss {}".format(epoch,
+                                                                       np.mean(gen_loss),
+                                                                       np.mean(lat_loss)))
+                        saver.save(sess, os.getcwd()+"/training/train", global_step=epoch)
+                        generated_test = sess.run(self.generated_images,
+                                                  feed_dict={self.images: visualization})
+                        generated_test = generated_test.reshape(self.batch_size, 28, 28)
+                        ims("results/"+str(epoch)+".jpg", merge(generated_test[:64], [8, 8]))
 
-model = VAE()
-model.train()
+VAE().train()
