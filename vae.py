@@ -105,7 +105,7 @@ class VAE:
         visualization = self.mnist.train.next_batch(self.batch_size)[0]
         reshaped_vis = visualization.reshape(self.batch_size, 28, 28)
         ims("results/base.jpg", merge(reshaped_vis[:64], [8, 8]))
-        # train
+
         saver = tf.train.Saver(max_to_keep=2)
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -116,7 +116,6 @@ class VAE:
                                                       self.generation_loss,
                                                       self.latent_loss),
                                                      feed_dict={self.images: batch})
-                    # dumb hack to print cost every epoch
                     if idx % (self.n_samples - 3) == 0:
                         print("epoch {}: genloss {} latloss {}".format(epoch,
                                                                        np.mean(gen_loss),
